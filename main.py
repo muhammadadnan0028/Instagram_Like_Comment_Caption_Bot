@@ -3,6 +3,8 @@ import time, os
 from multiprocessing import Process
 
 
+################################################################################################################################################################
+#######################################################____File Handling____####################################################################################
 
 def get_comments_from_file(file_name):
     try:
@@ -12,8 +14,6 @@ def get_comments_from_file(file_name):
     except Exception as e:
         print(f"Error reading comments from file: {e}")
         return []
-
-
 
 
 
@@ -43,8 +43,8 @@ def read_device_ips_from_file(file_name):
         print(f"Error reading device IPs from file: {e}")
         return []
 
-###############################################################################################################################################
-###############################################################################################################################################
+################################################################################################################################################################
+#######################################################____File Handling____####################################################################################
 def check_keywords(device_ip):
     device = u2.connect(device_ip)
     device.session("com.instagram.android")
@@ -77,94 +77,103 @@ def check_keywords(device_ip):
 ###############################################################################################################################################
 
 def action(device_ip):
-    check_keywords(device_ip)
-    device = u2.connect(device_ip)
-    
-    post_index = 1
-    loop_count = 0
-
+    print("[+]Bot Started")
     while True:
-        # Assuming the posts are accessible via some kind of list or container
-        post = device(resourceId="com.instagram.android:id/image_button", index=post_index)
+        check_keywords(device_ip)
+        device = u2.connect(device_ip)
 
-        # Check if the post exists, if not, exit the loop
-        if not post.exists:
-                device.swipe_ext("up", steps=20)
-                continue   
+        post_index = 1
+        loop_count = 0
+        total_loops = 0
+        while total_loops < 60:
+            # Assuming the posts are accessible via some kind of list or container
+            print(f"[+]Clicked on the post {post_index}")
+            post = device(resourceId="com.instagram.android:id/image_button", index=post_index)
 
-        post.click()
+            # Check if the post exists, if not, exit the loop
+            if not post.exists:
+                    # device.swipe_ext("up", steps=20)
+                    continue   
 
+            post.click()
 
-        time.sleep(1)
-        try:
-            device.swipe_ext("up", steps=10)
-            likeButton = device(resourceId="com.instagram.android:id/row_feed_button_like")
-            likeButton.click()
-            more = device.xpath('//*[@content-desc="more"]')
-            if more.exists:
-                 more.click()
-                    
 
             time.sleep(1)
-            
-            # device.swipe_ext("up", steps=20) 
+            try:
+                device.swipe_ext("up", steps=10)
+                likeButton = device(resourceId="com.instagram.android:id/row_feed_button_like")
+                likeButton.click()
+                print("[+]Liked the post")
+                more = device.xpath('//*[@content-desc="more"]')
+                if more.exists:
+                    more.click()
+                        
 
-            caption = device(resourceId="com.instagram.android:id/row_feed_comment_textview_layout")
-            # caption.click()
+                time.sleep(1)
+                
+                # device.swipe_ext("up", steps=20) 
 
-            if caption.exists():
-                caption_text = caption.get_text()
-                print("Caption:", caption_text)
-                save_captions_to_file(caption_text)
-        except:
-            pass
+                caption = device(resourceId="com.instagram.android:id/row_feed_comment_textview_layout")
+                # caption.click()
 
-        commentButton = device(resourceId="com.instagram.android:id/row_feed_button_comment")
-        commentButton.click()
+                if caption.exists():
+                    caption_text = caption.get_text()
+                    # print("Caption:", caption_text)
+                    save_captions_to_file(caption_text)
+                    print("[+]Caption Saved")
+            except:
+                pass
 
-        try:
-            comments = get_comments_from_file("comments.txt")
-            for comment_text in comments:
-                try:
-                    comment = device(resourceId="com.instagram.android:id/layout_comment_thread_edittext")
-                    comment.set_text(comment_text)
+            commentButton = device(resourceId="com.instagram.android:id/row_feed_button_comment")
+            commentButton.click()
 
-                    commentPost = device(resourceId="com.instagram.android:id/layout_comment_thread_post_button_icon")
-                    commentPost.click()
+            try:
+                comments = get_comments_from_file("comments.txt")
+                for comment_text in comments:
+                    try:
+                        comment = device(resourceId="com.instagram.android:id/layout_comment_thread_edittext")
+                        comment.set_text(comment_text)
+
+                        commentPost = device(resourceId="com.instagram.android:id/layout_comment_thread_post_button_icon")
+                        commentPost.click()
+                        print("[+]Commented on the Post")
+                        print("\n*****************************************************\n\n")
+                        time.sleep(2)
+                        device.press('back')
+                    except Exception as e:
+                        print(f"Error commenting: {e}")
+                        pass
+            except Exception as e:
+                print(f"Error while processing comments: {e}")
+                pass
+                
+            time.sleep(1)
+            device.press('back')
+
+            time.sleep(120)
+            device.press('back')
+            post_index += 1
+
+            loop_count += 1
+
+            if loop_count == 9:
+                    device.swipe_ext("up", steps=50) 
+                    device.swipe_ext("up", steps=50) 
                     time.sleep(2)
+                    loop_count = 0
+                    post_index = 1
+                    post = device(resourceId="com.instagram.android:id/image_button", index=post_index)
+                    post.click()
                     device.press('back')
-                except Exception as e:
-                    print(f"Error commenting: {e}")
-                    pass
-        except Exception as e:
-            print(f"Error while processing comments: {e}")
-            pass
-             
-        time.sleep(1)
-        device.press('back')
+                    post_index = 6
+            
 
-        time.sleep(1)
-        device.press('back')
+            time.sleep(3)
+            total_loops += 1
 
-        post_index += 1
-
-        loop_count += 1
-
-        if loop_count == 9:
-                device.swipe_ext("up", steps=50) 
-                device.swipe_ext("up", steps=50) 
-                time.sleep(2)
-                loop_count = 0
-                post_index = 1
-                post = device(resourceId="com.instagram.android:id/image_button", index=post_index)
-                post.click()
-                device.press('back')
-                post_index = 6
-        
-
-        time.sleep(3)
-
-
+        print("\n\n\nTaking a break for 12 hours...")
+        time.sleep(12*60*60)  # Sleep for 12 hours
+        total_loops = 0  # Reset loop count after the break
 
 ###############################################################################################################################################
 ###############################################################################################################################################
